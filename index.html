@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creator Toolbox – Free YouTube Tools</title>
+  <meta name="description" content="Download YouTube thumbnails, convert audio, and generate intro animations – free and browser-based.">
+  <meta name="keywords" content="youtube tools, thumbnail downloader, audio converter, intro generator">
+  <meta name="robots" content="index, follow">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.11.6/dist/ffmpeg.min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans">
+  <header class="bg-white shadow p-4 text-center sticky top-0 z-10">
+    <h1 class="text-3xl font-bold text-red-600">Creator Toolbox</h1>
+    <p class="text-sm text-gray-500">Free browser tools for YouTubers</p>
+  </header>
+
+  <main class="max-w-5xl mx-auto p-6 grid gap-12">
+    <!-- Thumbnail Downloader -->
+    <section id="thumbnail" class="bg-white rounded-xl shadow p-6">
+      <h2 class="text-2xl font-semibold mb-4 text-red-600">YouTube Thumbnail Downloader</h2>
+      <input type="text" id="thumbUrl" placeholder="Paste YouTube video link..." class="w-full border rounded px-3 py-2 mb-2 text-sm">
+      <button onclick="getThumbnail()" class="bg-red-500 text-white rounded px-4 py-2 text-sm hover:bg-red-600">Get Thumbnail</button>
+      <div id="thumbResult" class="mt-4 hidden">
+        <p class="text-sm text-gray-500 mb-2">Thumbnail:</p>
+        <img id="thumbImage" src="" alt="Thumbnail" class="rounded shadow w-full">
+        <a id="thumbDownload" href="#" download class="block mt-2 text-red-600 underline text-sm">Download</a>
+      </div>
+    </section>
+
+    <!-- Audio Converter -->
+    <section id="audio" class="bg-white rounded-xl shadow p-6">
+      <h2 class="text-2xl font-semibold mb-4 text-red-600">Audio Converter</h2>
+      <input type="file" id="audioFile" accept="audio/*" class="mb-4">
+      <select id="audioFormat" class="border p-2 rounded text-sm mb-4">
+        <option value="mp3">MP3</option>
+        <option value="wav">WAV</option>
+        <option value="ogg">OGG</option>
+      </select>
+      <br />
+      <button onclick="convertAudio()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Convert</button>
+      <div id="audioOutput" class="mt-4 hidden">
+        <a id="downloadAudio" class="text-red-600 underline text-sm" download>Download Converted File</a>
+      </div>
+    </section>
+
+    <!-- Intro Generator -->
+    <section id="intro" class="bg-white rounded-xl shadow p-6">
+      <h2 class="text-2xl font-semibold mb-4 text-red-600">YouTube Intro Generator</h2>
+      <input type="text" id="introText" placeholder="Enter your channel name..." class="border px-3 py-2 rounded w-full mb-4">
+      <button onclick="showIntro()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Create Intro</button>
+      <div id="introPreview" class="mt-6 hidden text-center">
+        <div class="animate-pulse text-4xl font-bold text-red-500" id="introDisplay"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="text-center text-sm text-gray-500 py-6">
+    &copy; 2025 Creator Toolbox – All rights reserved.
+  </footer>
+
+  <script>
+    // Thumbnail Downloader
+    function getThumbnail() {
+      const url = document.getElementById('thumbUrl').value;
+      const videoIdMatch = url.match(/(?:v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+      if (!videoIdMatch) {
+        alert("Please enter a valid YouTube URL.");
+        return;
+      }
+      const id = videoIdMatch[1];
+      const thumbUrl = `https://img.youtube.com/vi/${id}/maxresdefault.jpg`;
+      document.getElementById('thumbImage').src = thumbUrl;
+      document.getElementById('thumbDownload').href = thumbUrl;
+      document.getElementById('thumbResult').classList.remove('hidden');
+    }
+
+    // Audio Converter
+    async function convertAudio() {
+      const { createFFmpeg, fetchFile } = FFmpeg;
+      const ffmpeg = createFFmpeg({ log: false });
+      const fileInput = document.getElementById("audioFile");
+      const format = document.getElementById("audioFormat").value;
+
+      if (!fileInput.files.length) {
+        alert("Please select an audio file.");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const fileName = file.name.split('.')[0];
+      const outputName = `output.${format}`;
+
+      document.querySelector("#audioOutput").classList.remove("hidden");
+
+      await ffmpeg.load();
+      ffmpeg.FS('writeFile', file.name, await fetchFile(file));
+      await ffmpeg.run('-i', file.name, outputName);
+      const data = ffmpeg.FS('readFile', outputName);
+      const blob = new Blob([data.buffer], { type: `audio/${format}` });
+      const url = URL.createObjectURL(blob);
+
+      const downloadLink = document.getElementById("downloadAudio");
+      downloadLink.href = url;
+      downloadLink.download = `${fileName}.${format}`;
+      downloadLink.textContent = `Download ${fileName}.${format}`;
+    }
+
+    // Intro Generator
+    function showIntro() {
+      const text = document.getElementById("introText").value.trim();
+      if (!text) {
+        alert("Enter your channel name.");
+        return;
+      }
+      document.getElementById("introPreview").classList.remove("hidden");
+      document.getElementById("introDisplay").textContent = text;
+    }
+  </script>
+</body>
+</html>
